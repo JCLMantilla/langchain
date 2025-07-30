@@ -6,6 +6,8 @@ import time
 import json
 import logging
 import requests
+import random
+import asyncio
 from io import StringIO
 from app.utils import *
 from fastapi import FastAPI, Request, HTTPException, UploadFile, File
@@ -103,13 +105,27 @@ async def process_file(file: UploadFile = File(...)):
     # Separate by each line:
     lines = [ {"original_line":line.replace("&nbsp;", "").split('\t')} for line in text_content.split('\n')[3:]]
 
-    for line in lines:
-        try:
-            _ = await generate_sentences(line)
-            line['oraciones'] = _.get('oraciones', [])
-        except Exception as e:
-            print(f"Error processing line: {e}")
-            line['oraciones'] = []
+    # Create a semaphore to limit concurrent requests to 10
+    semaphore = asyncio.Semaphore(15)
+
+    # Process all lines concurrently with random delays
+    async def process_line(line):
+        async with semaphore:
+            try:
+                # Add random sleep between 1 and 3 seconds to prevent simultaneous calls
+                sleep_time = random.uniform(0, 1)
+                await asyncio.sleep(sleep_time)
+                
+                _ = await generate_sentences(line)
+                line['oraciones'] = _.get('oraciones', [])
+            except Exception as e:
+                print(f"Error processing line: {e}")
+                line['oraciones'] = []
+            return line
+    
+    # Create tasks for all lines and wait for all to complete
+    tasks = [process_line(line) for line in lines]
+    lines = await asyncio.gather(*tasks)
 
     return lines
 

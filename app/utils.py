@@ -44,7 +44,7 @@ class OpenAIService:
 
     async def __call__(self, messages, schema):
 
-        client = openai.AsyncOpenAI(api_key = self.api_key, base_url=self.base_url)
+        client = openai.AsyncOpenAI(api_key = self.api_key, base_url=self.base_url, max_retries=10, timeout=250)
         response = await client.chat.completions.parse(
             model = self.model,
             messages = messages,

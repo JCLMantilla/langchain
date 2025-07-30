@@ -1,22 +1,18 @@
-version: '3.5'
+version: '3.8'
 services:
   my-docker-service:
-    image: elenas-image
-    ports:
-      - ${APP_PORT}:8005
     build:
       context: .
       dockerfile: Dockerfile
     image: elenas-app:latest
+    ports:
+      - ${APP_PORT}:8005
     env_file:
       - .env
-    expose:
-      - ${APP_PORT}
     container_name: elenas-container
-
 
 networks:
   default:
     name: my_network
-    external: False
+    external: false
     
